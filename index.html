@@ -294,14 +294,33 @@
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const blob = await res.blob();
-      const guessed = guessType(url);
-      const blobType = (guessed !== 'application/octet-stream')
+
+      const serverType = (res.headers.get('content-type') || '').split(';')[0].trim();
+
+      if (serverType === 'text/html') {
+        hole.classList.remove('loading');
+        setStatus('');
+        showToast('colle un lien direct vers le fichier');
+        return;
+      }
+
+      const blob     = await res.blob();
+      const finalURL = res.url || url;
+      const guessed  = guessType(finalURL) !== 'application/octet-stream'
+        ? guessType(finalURL) : guessType(url);
+      const blobType = guessed !== 'application/octet-stream'
         ? guessed
-        : (blob.type && blob.type !== 'application/octet-stream' ? blob.type : 'image/jpeg');
+        : (serverType && serverType !== 'application/octet-stream' ? serverType : null);
+
+      if (!blobType) {
+        hole.classList.remove('loading');
+        setStatus('');
+        showToast('type de fichier non reconnu');
+        return;
+      }
+
       currentBlob = new Blob([blob], { type: blobType });
       currentURL  = URL.createObjectURL(currentBlob);
-
       showPreview(currentURL, blobType);
       hole.classList.remove('loading');
       setStatus('');
@@ -309,11 +328,11 @@
 
     } catch(e) {
       console.error(e);
-      // CORS fallback: open directly
       hole.classList.remove('loading');
       setStatus('');
       showCORSFallback(url);
     }
+  }
   }
 
   // ── Show preview inside circle ──

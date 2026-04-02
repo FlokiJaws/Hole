@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>hole</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@1,500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      background: #080808;
+    }
+
+    body {
+      height: 100%;
+      background: #080808;
+      font-family: 'Cormorant', serif;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      gap: 48px;
+      padding: 40px 24px 52px;
+      overflow-x: hidden;
+    }
+
+    h1 {
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1.4rem;
+      letter-spacing: 0.2em;
+      color: rgba(255,255,255,0.35);
+      user-select: none;
+    }
+
+    /* ── Central button ── */
+    .hole {
+      position: relative;
+      width: min(210px, 58vw);
+      height: min(210px, 58vw);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+    }
+
+    .hole svg.ring {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transition: opacity 0.3s;
+    }
+
+    .hole .track { fill: none; stroke: #1a1a1a; stroke-width: 1; }
+
+    .hole .spin-arc {
+      fill: none;
+      stroke: rgba(255,255,255,0.12);
+      stroke-width: 1;
+      stroke-linecap: round;
+      stroke-dasharray: 60 240;
+      transform-origin: 50% 50%;
+      transform: rotate(-90deg);
+      opacity: 0;
+    }
+
+    .hole.loading .spin-arc {
+      opacity: 1;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(270deg); }
+    }
+
+    .inner {
+      position: absolute;
+      inset: 9px;
+      border-radius: 50%;
+      background: #0e0e0e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, transform 0.15s;
+      overflow: hidden;
+    }
+
+    .hole:hover  .inner { background: #131313; transform: scale(1.025); }
+    .hole:active .inner { transform: scale(0.97); }
+    .hole.loading       { pointer-events: none; }
+
+    /* Default icon */
+    .icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s;
+    }
+
+    .hole.loading .icon-wrap { opacity: 0; }
+
+    .icon-wrap svg {
+      width: 26px; height: 26px;
+      stroke: #2e2e2e;
+      stroke-width: 1.4;
+      stroke-linecap: round; stroke-linejoin: round;
+      fill: none;
+      transition: stroke 0.2s;
+    }
+    .hole:hover .icon-wrap svg { stroke: #404040; }
+
+    /* Preview inside circle */
+    .preview-wrap {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.35s;
+      pointer-events: none;
+    }
+
+    .preview-wrap.visible { opacity: 1; }
+
+    .preview-wrap img,
+    .preview-wrap video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* ── Status ── */
+    .status {
+      font-style: italic;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.18);
+      min-height: 1em;
+      text-align: center;
+      transition: opacity 0.25s;
+      user-select: none;
+    }
+
+    /* ── Save button ── */
+    .save-btn {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 32px;
+      border-radius: 100px;
+      background: #fff;
+      color: #111;
+      font-family: 'Cormorant', serif;
+      font-style: italic;
+      font-size: 1.05rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      border: none;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s, transform 0.12s;
+      animation: fadeUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .save-btn.visible { display: inline-flex; }
+    .save-btn:active  { transform: scale(0.96); background: #e8e8e8; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Error toast ── */
+    .toast {
+      position: fixed;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      color: rgba(255,255,255,0.5);
+      font-family: 'Cormorant', serif;
+      font-style: italic;
+      font-size: 0.82rem;
+      letter-spacing: 0.08em;
+      padding: 10px 20px;
+      border-radius: 100px;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <h1>hole</h1>
+
+  <div class="hole" id="hole" role="button" tabindex="0" aria-label="Coller et télécharger">
+    <svg class="ring" viewBox="0 0 210 210">
+      <circle class="track"    cx="105" cy="105" r="101"/>
+      <circle class="spin-arc" cx="105" cy="105" r="101"/>
+    </svg>
+    <div class="inner">
+      <div class="icon-wrap">
+        <!-- Clipboard icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+        </svg>
+      </div>
+      <div class="preview-wrap" id="preview"></div>
+    </div>
+  </div>
+
+  <p class="status" id="status">copier un lien puis appuyer</p>
+  <button class="save-btn" id="saveBtn">enregistrer</button>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const hole    = document.getElementById('hole');
+  const preview = document.getElementById('preview');
+  const status  = document.getElementById('status');
+  const saveBtn = document.getElementById('saveBtn');
+  const toast   = document.getElementById('toast');
+
+  let currentBlob = null;
+  let currentURL  = null;
+  let toastTimer  = null;
+
+  // ── Toast helper ──
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+
+  // ── Status helper ──
+  function setStatus(msg) { status.textContent = msg; }
+
+  // ── Reset UI ──
+  function reset(msg = 'copier un lien puis appuyer') {
+    hole.classList.remove('loading');
+    preview.classList.remove('visible');
+    preview.innerHTML = '';
+    saveBtn.classList.remove('visible');
+    currentBlob = null;
+    currentURL  = null;
+    setStatus(msg);
+  }
+
+  // ── Main tap handler ──
+  hole.addEventListener('click', handleTap);
+  hole.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') handleTap(); });
+
+  async function handleTap() {
+    if (hole.classList.contains('loading')) return;
+
+    // 1. Read clipboard
+    let url = '';
+    try {
+      url = (await navigator.clipboard.readText()).trim();
+    } catch(e) {
+      showToast('accès presse-papier refusé');
+      return;
+    }
+
+    if (!url || !isValidURL(url)) {
+      showToast('aucun lien valide dans le presse-papier');
+      return;
+    }
+
+    // 2. Fetch
+    hole.classList.add('loading');
+    saveBtn.classList.remove('visible');
+    preview.innerHTML = '';
+    preview.classList.remove('visible');
+    setStatus('téléchargement…');
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const contentType = res.headers.get('content-type') || guessType(url);
+      const blob = await res.blob();
+      const blobType = blob.type || contentType || 'application/octet-stream';
+      currentBlob = new Blob([blob], { type: blobType });
+      currentURL  = URL.createObjectURL(currentBlob);
+
+      showPreview(currentURL, blobType);
+      hole.classList.remove('loading');
+      setStatus('');
+      saveBtn.classList.add('visible');
+
+    } catch(e) {
+      console.error(e);
+      // CORS fallback: open directly
+      hole.classList.remove('loading');
+      setStatus('');
+      showCORSFallback(url);
+    }
+  }
+
+  // ── Show preview inside circle ──
+  function showPreview(src, type) {
+    preview.innerHTML = '';
+    let el;
+    if (type.startsWith('video')) {
+      el = document.createElement('video');
+      el.autoplay = true;
+      el.loop     = true;
+      el.muted    = true;
+      el.playsInline = true;
+    } else {
+      el = document.createElement('img');
+      el.alt = '';
+    }
+    el.src = src;
+    preview.appendChild(el);
+    preview.classList.add('visible');
+  }
+
+  // ── Save / Share ──
+  saveBtn.addEventListener('click', async () => {
+    if (!currentBlob) return;
+    const ext  = extFromType(currentBlob.type);
+    const name = 'media' + ext;
+    const file = new File([currentBlob], name, { type: currentBlob.type });
+
+    if (navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        reset('copier un lien puis appuyer');
+        return;
+      } catch(e) {
+        if (e.name === 'AbortError') return;
+      }
+    }
+    // Fallback download
+    Object.assign(document.createElement('a'), { href: currentURL, download: name }).click();
+  });
+
+  // ── CORS fallback: can't fetch, open in browser ──
+  function showCORSFallback(url) {
+    showToast('CORS bloqué — ouverture directe');
+    // Try opening in new tab so user can long-press to save
+    window.open(url, '_blank');
+  }
+
+  // ── Helpers ──
+  function isValidURL(s) {
+    try { const u = new URL(s); return u.protocol === 'http:' || u.protocol === 'https:'; }
+    catch { return false; }
+  }
+
+  function guessType(url) {
+    if (/\.(mp4|mov|webm|avi)(\?|$)/i.test(url)) return 'video/mp4';
+    if (/\.(gif)(\?|$)/i.test(url))               return 'image/gif';
+    if (/\.(jpe?g)(\?|$)/i.test(url))             return 'image/jpeg';
+    if (/\.(png)(\?|$)/i.test(url))               return 'image/png';
+    if (/\.(webp)(\?|$)/i.test(url))              return 'image/webp';
+    return 'application/octet-stream';
+  }
+
+  function extFromType(type) {
+    const map = {
+      'image/gif': '.gif', 'image/jpeg': '.jpg', 'image/png': '.png',
+      'image/webp': '.webp', 'video/mp4': '.mp4', 'video/quicktime': '.mov',
+      'video/webm': '.webm'
+    };
+    return map[type] || '';
+  }
+})();
+</script>
+</body>
+</html>

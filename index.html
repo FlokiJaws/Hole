@@ -294,9 +294,11 @@
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const contentType = res.headers.get('content-type') || guessType(url);
       const blob = await res.blob();
-      const blobType = blob.type || contentType || 'application/octet-stream';
+      const guessed = guessType(url);
+      const blobType = (guessed !== 'application/octet-stream')
+        ? guessed
+        : (blob.type && blob.type !== 'application/octet-stream' ? blob.type : 'image/jpeg');
       currentBlob = new Blob([blob], { type: blobType });
       currentURL  = URL.createObjectURL(currentBlob);
 
